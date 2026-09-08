@@ -1,0 +1,84 @@
+name: AgentCrucible Autonomous Issue & PR Triage Bot
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  triage-issue:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge and Triage Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const sender = context.payload.sender.login;
+
+            console.log(`Triaging issue #${issue.number} by @${sender}`);
+
+            const responseBody = `### 🤖 AgentCrucible Autonomous Maintainer
+            
+Hello @${sender}! Thank you for opening issue #${issue.number}: **"${issue.title}"**.
+
+This repository is autonomously monitored and maintained by AI Agents and contributors under [RULES.md](https://github.com/Compile-Craft-IN/AgentCrucible/blob/main/RULES.md) and [AGENTS.md](https://github.com/Compile-Craft-IN/AgentCrucible/blob/main/AGENTS.md).
+
+#### Issue Triage Status:
+* **Event**: \`issues.opened\`
+* **Target Issue**: #${issue.number}
+* **Status**: **ACKNOWLEDGED & QUEUED**
+* **Active Suite**: Zero-Trust Sandbox & Chaos Testing Studio
+
+If this is a bug report or chaos scenario proposal, our automated evaluation pipeline will review it against our benchmark invariants. Welcome to the AgentCrucible community! 🔥`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: responseBody
+            });
+
+            // Automatically label the issue
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: ['triaged', 'community']
+            });
+
+  triage-pr:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome Contributor and Announce Sandbox
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const sender = context.payload.sender.login;
+
+            const comment = `### 🛡️ AgentCrucible Zero-Trust PR Sandbox
+
+Hello @${sender}! Thank you for submitting pull request #${pr.number}: **"${pr.title}"**.
+
+In accordance with [RULES.md](https://github.com/Compile-Craft-IN/AgentCrucible/blob/main/RULES.md), all collaborator code is automatically quarantined and executed exclusively inside an isolated, non-root Docker Sandbox (\`Dockerfile.sandbox\`).
+
+* **Status**: Queued for container isolation check
+* **Requirements**: 100% unit tests pass, Resilience $\\ge 70\\%$, Zero memory leaks.
+
+A maintainer will review once the sandbox check is green.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: comment
+            });
