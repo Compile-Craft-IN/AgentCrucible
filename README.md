@@ -28,7 +28,139 @@ Modern autonomous AI agents and tool-calling LLM workflows are entering producti
 
 ---
 
-## 2. Core Studio Capabilities
+## 2. Real-World Industry Use Cases & Concrete Walkthroughs
+
+### When & Why Do Engineering Teams Use AgentCrucible?
+
+| Industry / Domain | Real-World Failure Scenario | How AgentCrucible Solves It |
+| :--- | :--- | :--- |
+| **DevOps & Autonomous SRE** | An automated remediation agent hits a Kubernetes API 429 rate limit during an outage. It spams requests without backoff, causing cascading pod evictions. | The **Chaos Lab** simulates HTTP 429 errors with `Retry-After` headers. The **Diagnostic Engine** flags the retry loop, and the developer verifies exponential backoff via **Time-Travel Diffing**. |
+| **FinTech & Regulatory Compliance** | A multi-agent wire audit swarm inspects user-provided invoice memos. An unescaped memo contains SQL injection syntax (`' OR '1'='1`). | The **Security Taint Analyzer** catches the raw query execution. The developer forks a counterfactual branch (`/replay`) to test parameterized prepared statements before deploying to prod. |
+| **Autonomous Coding & Refactoring** | An agent refactoring Python code hallucinates a phantom PyPI package, then encounters a hidden prompt injection in a documentation file attempting credential exfiltration. | The **Adversarial Fuzzer** mutates instruction-smuggling payloads, while the **Diagnostic Engine** flags phantom dependencies and isolates hostile doc comments via quarantine guardrails. |
+| **Pre-Deployment CI/CD Gate** | A team builds customer support bots. Agents pass standard unit tests but fail when external APIs experience P99 latency spikes or malformed JSON payloads. | The headless CLI (`npm run cli:eval`) runs in GitHub Actions, failing PR builds if resilience under injected chaos drops below 70%. |
+
+---
+
+### Concrete Walkthrough Example: Debugging a Financial Fraud Swarm
+
+Let's walk through an end-to-end debugging session in AgentCrucible using the built-in FinTech Audit Swarm scenario:
+
+```
+[ Incoming Alert: $4.2M Suspicious Wire Burst ]
+                       │
+                       ▼
+            ┌─────────────────────┐
+            │   SupervisorAgent   │
+            └──────────┬──────────┘
+                       │ Parallel Delegation
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+┌──────────────────┐       ┌──────────────────────┐
+│ FraudAnalystAgent│       │ComplianceOfficerAgent│
+└────────┬─────────┘       └──────────┬───────────┘
+         │                            │
+         ▼ Dynamic SQL                ▼ OFAC SDN Check
+┌──────────────────┐       ┌──────────────────────┐
+│  ⚡ CHAOS FAULT:  │       │ ⚠️ Sanctions Match:  │
+│  SQL INJECTION   │       │ Aura Marine Logistics│
+│  TAINT DETECTED  │       └──────────────────────┘
+└────────┬─────────┘
+         │
+         ▼ [DEVELOPER TIME-TRAVEL ACTION]
+┌─────────────────────────────────────────────────────────┐
+│ Time-Travel Replay Studio (/replay)                     │
+│ 1. Scrub to Step #4 (WAF Intercept)                     │
+│ 2. Press 'B' to Fork Counterfactual Branch              │
+│ 3. Replace raw string with Prepared Parameterized SQL   │
+│ 4. Outcome: Clean query execution, asset freeze, SAR    │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Step 1: Inspect Execution on the Trajectory DAG (`/dag`)
+1. Select **"FinTech Fraud & Regulatory Audit Swarm"** from the top scenario dropdown.
+2. In the DAG canvas, locate node `#04`: `ledger_query_raw`.
+3. Notice the **electric pink double border**: AgentCrucible has flagged an unescaped SQL injection exploit triggered by user memo input: `Invoice 492' OR '1'='1' --`.
+
+#### Step 2: Time-Travel & Fork a Counterfactual Branch (`/replay`)
+1. Switch to the **Time-Travel & Replay Studio** (press `2`).
+2. Scrub the timeline to Step 4.
+3. Click **"Fork from this Step ('B')"** to open the Counterfactual Parameter Editor.
+4. Replace the raw dynamic SQL string with parameterized prepared statements:
+   ```json
+   {
+     "preparedSql": "SELECT id, amount, memo FROM transactions WHERE account_id = ? AND memo LIKE ?",
+     "params": ["ACC-904128", "%Invoice 492%"]
+   }
+   ```
+5. Click **"Simulate Counterfactual Replay"**.
+
+#### Step 3: Inspect the Side-by-Side Split Diff View
+* The Studio opens the **Dual-Lane Split Diff**:
+  * **Lane A (Baseline)**: Shows the WAF violation, database deadlock, and unhandled failure state.
+  * **Lane B (Counterfactual)**: Shows sanitized query execution, isolation of target transaction `TX-9901`, and automatic generation of the FinCEN Suspicious Activity Report (SAR).
+  * **Summary Banner**: Displays `Δ Tokens: -14.2% saved`, `Δ Latency: -320ms`, `Outcome: SOLVED`.
+
+#### Step 4: Verify CI Regression Benchmarks Programmatically
+Run the headless evaluation command in your terminal to ensure the safety invariant holds across all test suites:
+```bash
+npm run cli:eval
+```
+```text
+[2/3] FinTech Fraud & Regulatory Audit Swarm
+   Run ID: scenario-fintech-002 | Nodes: 10 | Duration: 24.2s
+   Accuracy:   96% 	(Threshold >= 80%)
+   Resilience: 100% 	(Threshold >= 70%)
+   Tokens:     18,950 tk | Cost: $0.0948
+   CI Status:  ✔ PASSED
+```
+
+---
+
+### Programmatic Ingestion Example: Ingesting External Traces
+
+You can import OpenTelemetry spans from your own agent systems (LangChain, CrewAI, AutoGen) directly into AgentCrucible:
+
+```typescript
+import { TraceIngestionEngine } from './src/engine/TraceIngestionEngine';
+import { EvalEngine } from './src/engine/EvalEngine';
+
+// 1. Raw OpenTelemetry span data from your agent pipeline:
+const otlpSpans = [
+  {
+    traceId: "trace-production-902",
+    spanId: "span-orchestrator-root",
+    name: "planner_agent",
+    attributes: {
+      "agent.name": "SREPlanner",
+      "thought": "Decomposing alert: high memory on payment-api.",
+      "llm.prompt_tokens": 580,
+      "llm.completion_tokens": 90
+    }
+  },
+  {
+    traceId: "trace-production-902",
+    spanId: "span-k8s-tool",
+    parentSpanId: "span-orchestrator-root",
+    name: "tool_k8s_restart",
+    attributes: {
+      "agent.name": "SREPlanner",
+      "input": { "pod": "payment-api-pod-12" },
+      "output": { "error": "HTTP 429 Too Many Requests" }
+    }
+  }
+];
+
+// 2. Ingest and normalize into an AgentCrucible Trajectory:
+const trajectory = TraceIngestionEngine.ingestTrace(otlpSpans, "Production SRE Incident #902");
+
+// 3. Compute resilience and safety metrics automatically:
+const metrics = EvalEngine.evaluateScenario(trajectory);
+console.log(`Resilience Score: ${Math.round(metrics.resilience * 100)}%`);
+```
+
+---
+
+## 3. Core Studio Architecture & View Taxonomy
 
 ```
                           ┌────────────────────────┐
@@ -98,7 +230,7 @@ Modern autonomous AI agents and tool-calling LLM workflows are entering producti
 
 ---
 
-## 3. Zero-Trust Sandbox Architecture (Docker / Container Isolation)
+## 4. Zero-Trust Sandbox Architecture (Docker / Container Isolation)
 
 To protect host environments when evaluating untrusted pull requests from external contributors, AgentCrucible enforces a **Zero-Trust Isolation Policy**:
 
@@ -139,7 +271,7 @@ To protect host environments when evaluating untrusted pull requests from extern
 
 ---
 
-## 4. Getting Started & How to Use
+## 5. Getting Started & How to Use
 
 ### Prerequisites
 * **Node.js**: v20+ or v22+ LTS
@@ -184,7 +316,7 @@ Open **`http://localhost:5173`** in your browser.
 
 ---
 
-## 5. Keyboard Navigation Reference
+## 6. Keyboard Navigation Reference
 
 | Key | Scope | Function |
 | :---: | :--- | :--- |
@@ -202,17 +334,6 @@ Open **`http://localhost:5173`** in your browser.
 | **`7`** | Global | Switch to Resilience Benchmark Matrix |
 | **`?`** | Global | Open Keyboard Shortcuts Cheat Sheet |
 | **`Esc`** | Modal / Drawer | Deselect node or close active modal overlay |
-
----
-
-## 6. Preloaded Production Scenarios
-
-1. **DevOps Autonomous Incident Mitigator (`scenario-devops-001`)**:
-   * SRE agent triages a 5xx spike on a payment service, queries Prometheus, inspects Kubernetes pod logs, encounters an HTTP 429 rate limit fault, recovers via exponential backoff, isolates PostgreSQL connection exhaustion, and triggers a canary rollback.
-2. **FinTech Fraud & Regulatory Audit Swarm (`scenario-fintech-002`)**:
-   * Supervisor agent coordinates Fraud Analyst and Compliance Officer subagents handling a \$4.2M wire burst. An unescaped memo triggers a SQL injection chaos fault, solved by counterfactual parameterized prepared statements and OFAC sanctions enforcement.
-3. **Full-Stack Code Refactoring Agent (`scenario-refactor-003`)**:
-   * Agent refactors synchronous handlers to SQLAlchemy 2.0 AsyncEngine. Recovers from dependency hallucinations by installing verified driver `asyncpg` and neutralizes an indirect prompt injection attack embedded in `README.md`.
 
 ---
 
