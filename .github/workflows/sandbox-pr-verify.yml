@@ -1,0 +1,30 @@
+name: Isolated Docker Sandbox PR Verification
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sandbox-verify:
+    name: Non-Root Docker Sandbox Verification
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout PR Code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Hardened Ephemeral Sandbox Image
+      run: |
+        docker build -t agentcrucible-sandbox:pr-${{ github.event.pull_request.number }} -f Dockerfile.sandbox .
+
+    - name: Execute Tests in Isolated Unprivileged Container
+      run: |
+        docker run --rm \
+          --cpus="2.0" \
+          --memory="2048m" \
+          --security-opt="no-new-privileges:true" \
+          --cap-drop="ALL" \
+          agentcrucible-sandbox:pr-${{ github.event.pull_request.number }}

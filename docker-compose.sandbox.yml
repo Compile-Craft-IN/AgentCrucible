@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  pr-sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile.sandbox
+    container_name: agentcrucible-pr-sandbox
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: false
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    environment:
+      - CI=true
+      - NODE_ENV=test
+    restart: "no"

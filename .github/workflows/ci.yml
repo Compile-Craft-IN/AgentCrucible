@@ -1,0 +1,33 @@
+name: AgentCrucible CI & Resilience Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-eval:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js LTS
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run Engine & Unit Tests
+      run: npm test
+
+    - name: Execute Headless Resilience Evaluation Matrix
+      run: npm run cli:eval
+
+    - name: Run Production TypeScript & Vite Build
+      run: npm run build

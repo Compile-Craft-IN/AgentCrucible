@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void-950: #07080B;
+  --color-void-900: #0B0D13;
+  --color-void-850: #0F121A;
+  --color-void-800: #151923;
+  --color-void-750: #1C212E;
+  --color-void-700: #252B3B;
+
+  --color-border-subtle: #1E2330;
+  --color-border-medium: #2A3245;
+  --color-border-prominent: #3D4761;
+
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+  --color-text-ghost: #4B5563;
+
+  --color-status-success: #10B981;
+  --color-status-error: #F43F5E;
+  --color-status-warning: #F59E0B;
+  --color-status-running: #06B6D4;
+  --color-status-branched: #A855F7;
+  --color-status-chaos: #EC4899;
+
+  --color-crucible-amber: #F59E0B;
+  --color-crucible-neon: #FF5500;
+  --color-crucible-violet: #6366F1;
+  --color-crucible-cyan: #06B6D4;
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0D13;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252B3B;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3D4761;
+}
+
+/* Custom Utility Classes & Animations */
+.shadow-glow-chaos {
+  box-shadow: 0 0 16px -2px rgba(236, 72, 153, 0.45);
+}
+
+.shadow-glow-cyan {
+  box-shadow: 0 0 16px -2px rgba(6, 182, 212, 0.4);
+}
+
+.shadow-glow-purple {
+  box-shadow: 0 0 16px -2px rgba(168, 85, 247, 0.4);
+}
+
+.shadow-glow-emerald {
+  box-shadow: 0 0 16px -2px rgba(16, 185, 129, 0.35);
+}
+
+.shadow-glow-rose {
+  box-shadow: 0 0 16px -2px rgba(244, 63, 94, 0.4);
+}
+
+.bg-grid-pattern {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

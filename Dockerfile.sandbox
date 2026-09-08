@@ -1,0 +1,33 @@
+# Hardened Non-Root Sandbox Container for Collaborator PR Verification
+FROM node:22-alpine
+
+# Set security flags & create unprivileged sandbox user
+RUN addgroup -S sandbox && adduser -S -G sandbox -u 10001 sandbox
+
+# Set working directory with sandbox user ownership
+WORKDIR /home/sandbox/app
+RUN chown -R sandbox:sandbox /home/sandbox
+
+# Switch to non-root unprivileged user
+USER sandbox
+
+# Copy package manifests first for optimal caching
+COPY --chown=sandbox:sandbox package*.json ./
+
+# Install dependencies strictly with clean state
+RUN npm ci --ignore-scripts --no-audit
+
+# Copy repository source code
+COPY --chown=sandbox:sandbox . .
+
+# Environment variables restricting telemetry or external network egress
+ENV NODE_ENV=test \
+    CI=true \
+    VITE_CJS_IGNORE_WARNING=true
+
+# Default entrypoint executes isolated verification sequence:
+# 1. Typecheck (tsc --noEmit)
+# 2. Unit tests (npm test)
+# 3. Headless CI resilience evaluation (npm run cli:eval)
+# 4. Production build (npm run build)
+CMD ["sh", "-c", "npm test && npm run cli:eval && npm run build"]
